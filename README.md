@@ -424,5 +424,6 @@ Below 640 px wide the arcade asks you to switch to a larger screen.
 <div align="center">
 
 <sub>Built for the Counterpoint team. Insert coin to continue.</sub>
+<sub>BY: Shiva Mani Goundar</sub>
 
 </div>
