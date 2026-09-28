@@ -45,10 +45,10 @@ export function HudRight({ hud, muted, onMute, onPause }: { hud: HudState; muted
 /** Compact HUD for narrow windows. */
 export function HudBar({ hud }: { hud: HudState }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-3 py-2 md:hidden">
-      <div><div className="label">{hud.playerName}</div><div className="font-arcade text-[13px]">{fmt(hud.score)}</div></div>
-      <div className="text-center"><div className="label">LVL {hud.level}</div><div className={`font-arcade text-[9px] ${DIFF_COLOR[hud.difficulty]}`}>{hud.difficulty}</div></div>
-      <Lives n={hud.lives} />
+    <div className="flex items-start justify-between gap-3 px-3 pb-2 pt-4 md:hidden">
+      <div className="min-w-0"><div className="label leading-none">{hud.playerName}</div><div className="mt-1 font-arcade text-[13px] leading-none">{fmt(hud.score)}</div></div>
+      <div className="text-center"><div className="label leading-none">LVL {hud.level}</div><div className={`mt-1 font-arcade text-[9px] leading-none ${DIFF_COLOR[hud.difficulty]}`}>{hud.difficulty}</div></div>
+      <div className="pt-1"><Lives n={hud.lives} /></div>
     </div>
   );
 }

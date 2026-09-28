@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash, timingSafeEqual } from "node:crypto";
+import { DbError } from "./api-helpers";
 import { getSupabase } from "./supabase-server";
 import { DIFFICULTY_LABELS } from "./types";
 import type {
@@ -8,8 +9,6 @@ import type {
 } from "./types";
 
 /** All database access lives here. UI components never talk to Supabase. */
-export class DbError extends Error {}
-
 function dbFail(context: string, error: unknown): never {
   console.error(`[db] ${context}:`, error);
   throw new DbError(context);

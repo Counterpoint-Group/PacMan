@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { DbError } from "./player-service";
+
+export class DbError extends Error {}
 
 export const jsonError = (message: string, status: number) => NextResponse.json({ error: message }, { status });
 

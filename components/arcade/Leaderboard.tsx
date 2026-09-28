@@ -46,10 +46,10 @@ export default function Leaderboard({ playerId, onBack }: { playerId: string; on
   const meVisible = !!data?.entries.some((e) => e.playerId === playerId);
 
   return (
-    <div className="w-full max-w-5xl">
+    <div className="w-full max-w-5xl overflow-hidden">
       <h2 className="font-arcade text-center text-[clamp(14px,2.4vw,24px)] neon-yellow">COUNTERPOINT LEADERBOARD</h2>
 
-      <div role="tablist" aria-label="Leaderboard filter" className="mt-7 flex flex-wrap justify-center gap-2">
+      <div role="tablist" aria-label="Leaderboard filter" className="sticky top-0 z-10 mt-7 flex flex-wrap justify-center gap-2 border-b border-[#1c2a78] bg-[#02030a] pb-3 pt-1">
         {TABS.map((t) => <button key={t.key} role="tab" type="button" className="tab" aria-selected={filter === t.key} onClick={() => setFilter(t.key)}>{t.label}</button>)}
       </div>
 

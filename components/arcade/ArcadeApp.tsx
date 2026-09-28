@@ -22,6 +22,7 @@ export default function ArcadeApp() {
   const [difficulty, setDifficulty] = useState<DifficultyKey>("OK_OK");
   const [gameId, setGameId] = useState(0);
   const [tooSmall, setTooSmall] = useState(false);
+  const [portraitOnly, setPortraitOnly] = useState(false);
 
   // Restore the verified player (signed cookie) after a refresh; show the loader for a beat.
   useEffect(() => {
@@ -41,10 +42,20 @@ export default function ArcadeApp() {
   }, []);
 
   useEffect(() => {
-    const check = () => setTooSmall(window.innerWidth < 640);
+    const check = () => {
+      const isPortrait = window.innerHeight >= window.innerWidth;
+      const coarse = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 900;
+      const isTiny = Math.min(window.innerWidth, window.innerHeight) < 360;
+      setTooSmall(isTiny);
+      setPortraitOnly(coarse && !isPortrait);
+    };
     check();
     window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    window.addEventListener("orientationchange", check);
+    return () => {
+      window.removeEventListener("resize", check);
+      window.removeEventListener("orientationchange", check);
+    };
   }, []);
 
   // Any screen that needs a verified player falls back to "WHO'S PLAYING?" if the session is gone.
@@ -69,6 +80,17 @@ export default function ArcadeApp() {
     );
   }
 
+  if (portraitOnly) {
+    return (
+      <main className="crt flex min-h-screen items-center justify-center p-8 text-center">
+        <div className="panel max-w-sm p-8">
+          <p className="font-arcade text-[13px] leading-[1.9] neon-yellow">PORTRAIT MODE ONLY</p>
+          <p className="mt-4 font-arcade text-[9px] text-[#b8c4ff]">ROTATE YOUR DEVICE TO CONTINUE</p>
+        </div>
+      </main>
+    );
+  }
+
   if (screen === "game" && player) {
     return (
       <PacmanGame
@@ -80,9 +102,9 @@ export default function ArcadeApp() {
   }
 
   return (
-    <main className="crt relative min-h-screen">
-      {screen !== "intro" && <Brand className="absolute left-5 top-5" />}
-      <div className={`mx-auto flex min-h-screen w-full flex-col items-center justify-center ${screen === "intro" ? "" : "px-6 py-20"}`}>
+    <main className={`crt relative w-full ${screen === "game" ? "h-[100dvh] overflow-hidden" : "min-h-[100dvh] overflow-y-auto overflow-x-hidden"}`}>
+      {screen !== "intro" && <Brand className="absolute left-5 top-5 z-20" />}
+      <div className={`mx-auto flex w-full flex-col items-center justify-center ${screen === "game" ? "h-full overflow-hidden" : "min-h-[100dvh] overflow-visible"} ${screen === "intro" ? "" : "px-4 pb-6 pt-12 sm:px-6 sm:py-20"}`}>
         {screen === "boot" && <PacLoader />}
         {screen === "intro" && <Intro onStart={() => setScreen(player ? "menu" : "select")} />}
         {screen === "select" && <PlayerSelector onVerified={(p) => { setPlayer(p); setScreen("menu"); }} onBack={() => setScreen("intro")} />}
