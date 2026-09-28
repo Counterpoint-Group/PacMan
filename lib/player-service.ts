@@ -93,21 +93,50 @@ export async function getLeaderboard(filter: LeaderboardFilter, viewerId: string
   let rows: Unranked[];
 
   if (filter === "OVERALL" || filter === "LEVEL") {
+    const totals = new Map<string, { pelletsEaten: number; ghostsEaten: number }>();
+    const { data: historyRows, error: historyError } = await db.from("game_history").select("player_id,pellets_eaten,ghosts_eaten").limit(50000);
+    if (historyError) dbFail("getLeaderboard(game_history totals)", historyError);
+    for (const r of (historyRows ?? []) as { player_id: string; pellets_eaten: number; ghosts_eaten: number }[]) {
+      const current = totals.get(r.player_id) ?? { pelletsEaten: 0, ghostsEaten: 0 };
+      current.pelletsEaten += r.pellets_eaten;
+      current.ghostsEaten += r.ghosts_eaten;
+      totals.set(r.player_id, current);
+    }
+
     const { data, error } = await db.from("players").select("id,name,department,high_score,highest_level,best_difficulty").or("total_games.gt.0,high_score.gt.0").limit(5000);
     if (error) dbFail("getLeaderboard(players)", error);
     rows = ((data ?? []) as PlayerRow[]).map((p) => ({
-      playerId: p.id, name: p.name, department: p.department, highScore: p.high_score, highestLevel: p.highest_level, bestDifficulty: p.best_difficulty,
+      playerId: p.id, name: p.name, department: p.department, highScore: p.high_score, highestLevel: p.highest_level,
+      ghostsEaten: totals.get(p.id)?.ghostsEaten ?? 0, pelletsEaten: totals.get(p.id)?.pelletsEaten ?? 0, bestDifficulty: p.best_difficulty,
     }));
   } else {
     const label = KEY_TO_LABEL[filter];
-    const { data, error } = await db.from("game_history").select("player_id,score,level_reached,players!inner(name,department)").eq("difficulty", label).order("score", { ascending: false }).limit(5000);
+    const totals = new Map<string, { pelletsEaten: number; ghostsEaten: number }>();
+    const { data: historyRows, error: historyError } = await db.from("game_history").select("player_id,pellets_eaten,ghosts_eaten,difficulty").eq("difficulty", label).limit(50000);
+    if (historyError) dbFail("getLeaderboard(filtered history totals)", historyError);
+    for (const r of (historyRows ?? []) as { player_id: string; pellets_eaten: number; ghosts_eaten: number; difficulty: string }[]) {
+      const current = totals.get(r.player_id) ?? { pelletsEaten: 0, ghostsEaten: 0 };
+      current.pelletsEaten += r.pellets_eaten;
+      current.ghostsEaten += r.ghosts_eaten;
+      totals.set(r.player_id, current);
+    }
+
+    const { data, error } = await db.from("game_history").select("player_id,score,level_reached,players!inner(name,department),pellets_eaten,ghosts_eaten").eq("difficulty", label).order("score", { ascending: false }).limit(5000);
     if (error) dbFail("getLeaderboard(history)", error);
     const best = new Map<string, Unranked>();
-    for (const r of (data ?? []) as unknown as { player_id: string; score: number; level_reached: number; players: { name: string; department: string | null } | { name: string; department: string | null }[] }[]) {
+    for (const r of (data ?? []) as unknown as { player_id: string; score: number; level_reached: number; pellets_eaten: number; ghosts_eaten: number; players: { name: string; department: string | null } | { name: string; department: string | null }[] }[]) {
       const p = Array.isArray(r.players) ? r.players[0] : r.players;
       const cur = best.get(r.player_id);
-      if (!cur) best.set(r.player_id, { playerId: r.player_id, name: p.name, department: p.department, highScore: r.score, highestLevel: r.level_reached, bestDifficulty: label });
-      else cur.highestLevel = Math.max(cur.highestLevel, r.level_reached);
+      if (!cur) {
+        best.set(r.player_id, {
+          playerId: r.player_id, name: p.name, department: p.department, highScore: r.score, highestLevel: r.level_reached,
+          ghostsEaten: totals.get(r.player_id)?.ghostsEaten ?? 0, pelletsEaten: totals.get(r.player_id)?.pelletsEaten ?? 0, bestDifficulty: label,
+        });
+      } else {
+        cur.highestLevel = Math.max(cur.highestLevel, r.level_reached);
+        cur.ghostsEaten = totals.get(r.player_id)?.ghostsEaten ?? cur.ghostsEaten;
+        cur.pelletsEaten = totals.get(r.player_id)?.pelletsEaten ?? cur.pelletsEaten;
+      }
     }
     rows = [...best.values()];
   }

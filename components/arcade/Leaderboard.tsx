@@ -9,7 +9,7 @@ const TABS: { key: LeaderboardFilter; label: string }[] = [
   { key: "NIGHTMARE", label: "NIGHTMARE" }, { key: "LEVEL", label: "HIGHEST LEVEL" },
 ];
 const MEDAL = ["🥇", "🥈", "🥉"];
-const COLS = "grid-cols-[56px_minmax(0,1fr)_112px_72px_110px] md:grid-cols-[64px_minmax(0,1.3fr)_minmax(0,1fr)_128px_96px_124px]";
+const COLS = "grid-cols-[56px_minmax(0,1fr)_112px_72px_72px_80px_80px_110px] md:grid-cols-[64px_minmax(0,1.3fr)_minmax(0,1fr)_128px_96px_96px_96px_124px]";
 
 function Row({ e, me, sticky = false }: { e: LeaderboardEntry; me: boolean; sticky?: boolean }) {
   return (
@@ -19,6 +19,8 @@ function Row({ e, me, sticky = false }: { e: LeaderboardEntry; me: boolean; stic
       <span className="hidden truncate text-[#7f95ff] md:block">{e.department ?? ""}</span>
       <span className="font-arcade text-right text-[11px]">{fmt(e.highScore)}</span>
       <span className="font-arcade text-right text-[10px]">LEVEL {e.highestLevel || "—"}</span>
+      <span className="font-arcade text-right text-[10px]">{fmt(e.ghostsEaten)}</span>
+      <span className="font-arcade text-right text-[10px]">{fmt(e.pelletsEaten)}</span>
       <span className={`font-arcade text-right text-[9px] ${e.bestDifficulty ? DIFF_COLOR[e.bestDifficulty] : ""}`}>{e.bestDifficulty ?? "—"}</span>
     </div>
   );
@@ -54,7 +56,8 @@ export default function Leaderboard({ playerId, onBack }: { playerId: string; on
       <div className="panel mt-6 p-3 sm:p-5">
         <div className={`grid ${COLS} gap-3 border-b-2 border-[#1c2a78] px-3 pb-3`}>
           <span className="label">RANK</span><span className="label">PLAYER</span><span className="label hidden md:block">DEPARTMENT</span>
-          <span className="label text-right">HIGH SCORE</span><span className="label text-right">LEVEL</span><span className="label text-right">DIFFICULTY</span>
+          <span className="label text-right">HIGH SCORE</span><span className="label text-right">LEVEL</span><span className="label text-right">GHOSTS</span>
+          <span className="label text-right">PELLETS</span><span className="label text-right">DIFFICULTY</span>
         </div>
 
         <div className="max-h-[52vh] min-h-[220px] overflow-y-auto">

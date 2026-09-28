@@ -29,6 +29,8 @@ export interface LeaderboardEntry {
   department: string | null;
   highScore: number;
   highestLevel: number;
+  ghostsEaten: number;
+  pelletsEaten: number;
   bestDifficulty: DifficultyLabel | null;
 }
 
