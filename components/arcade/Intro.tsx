@@ -53,7 +53,7 @@ export default function Intro({ onStart }: { onStart: () => void }) {
         <div className="relative mt-16 h-10 w-full appear" style={{ animationDelay: "2.7s" }} aria-hidden="true">
           <div className="parade absolute left-0 top-0 flex items-center gap-3">
             {GHOSTS.map((c, i) => <div key={c} className="bob" style={{ animationDelay: `${i * 0.12}s` }}><GhostIcon color={c} size={34} /></div>)}
-            <PacChomp size={36} flip />
+            <PacChomp size={36} />
           </div>
         </div>
 
