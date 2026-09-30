@@ -3,11 +3,13 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "re
 import { ApiError, apiGet, apiPost } from "@/lib/api";
 import type { PlayerProfile, PublicPlayer } from "@/lib/types";
 import { ArcadeButton, PacLoader } from "./ui";
+import CreatePlayer from "./CreatePlayer";
 
 interface Props { onVerified: (p: PlayerProfile) => void; onBack?: () => void }
 
 export default function PlayerSelector({ onVerified, onBack }: Props) {
   const [players, setPlayers] = useState<PublicPlayer[] | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<PublicPlayer | null>(null);
@@ -22,7 +24,7 @@ export default function PlayerSelector({ onVerified, onBack }: Props) {
     apiGet<{ players: PublicPlayer[] }>("/api/players").then((r) => setPlayers(r.players)).catch((e: ApiError) => setLoadError(e.message));
   }, []);
   useEffect(load, [load]);
-  useEffect(() => { if (players) searchRef.current?.focus(); }, [players]);
+  useEffect(() => { if (players && !isCreating) searchRef.current?.focus(); }, [players, isCreating]);
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -57,6 +59,7 @@ export default function PlayerSelector({ onVerified, onBack }: Props) {
     );
   }
   if (!players) return <PacLoader label="LOADING PLAYERS..." />;
+  if (isCreating) return <CreatePlayer onCreated={onVerified} onCancel={() => setIsCreating(false)} />;
 
   return (
     <form onSubmit={submit} className="panel drop-in w-full max-w-xl p-6 sm:p-8" aria-labelledby="who">
@@ -73,6 +76,15 @@ export default function PlayerSelector({ onVerified, onBack }: Props) {
       />
 
       <ul role="listbox" aria-label="Players" className="mt-2 max-h-56 overflow-y-auto border-[3px] border-[#1c2a78] bg-[#02030a]">
+        <li className="border-b-2 border-[var(--pac)]">
+          <button
+            type="button" data-player onClick={() => setIsCreating(true)}
+            className="flex w-full items-center gap-3 bg-[#241f00] px-4 py-3 text-left text-[var(--pac)] hover:bg-[#3a3200] focus-visible:bg-[#3a3200] focus-visible:outline-none"
+          >
+            <span className="font-arcade text-[16px]">+</span>
+            <span className="font-arcade text-[11px]">NEW PLAYER — CREATE ACCOUNT</span>
+          </button>
+        </li>
         {matches.length === 0 && <li className="p-4 text-[#7f95ff]">No player matches &quot;{query}&quot;.</li>}
         {matches.map((p) => {
           const on = selected?.id === p.id;

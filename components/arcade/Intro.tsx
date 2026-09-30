@@ -44,7 +44,7 @@ export default function Intro({ onStart }: { onStart: () => void }) {
   return (
     <button type="button" onClick={go} aria-label="Press start" className="relative flex min-h-screen w-full cursor-pointer flex-col items-center justify-center overflow-hidden px-6 text-center focus:outline-none">
       <div key={run} className="contents">
-        <p className="font-arcade text-[14px] neon-blue appear" style={{ animationDelay: ".3s" }}>COUNTERPOINT</p>
+        <p className="font-arcade text-[14px] neon-blue appear" style={{ animationDelay: ".3s" }}>COUNTERPOINT GROUP</p>
         <p className="font-arcade mt-3 text-[11px] text-[#8ea6ff] appear" style={{ animationDelay: ".9s" }}>PRESENTS</p>
 
         <h1 className="pixel-title mt-14 text-[clamp(38px,9vw,92px)] leading-none appear" style={{ animationDelay: "1.6s" }}>PAC-MAN</h1>

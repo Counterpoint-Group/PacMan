@@ -31,6 +31,9 @@ create table if not exists public.game_history (
 
 create index if not exists players_high_score_idx     on public.players (high_score desc);
 create index if not exists players_highest_level_idx  on public.players (highest_level desc);
+-- Workshop usernames are unique regardless of capitalization or surrounding spaces.
+-- This index also protects against two simultaneous sign-ups choosing the same name.
+create unique index if not exists players_name_unique_ci on public.players (lower(btrim(name)));
 create index if not exists game_history_player_idx    on public.game_history (player_id);
 create index if not exists game_history_played_at_idx on public.game_history (played_at desc);
 create index if not exists game_history_diff_score_idx on public.game_history (difficulty, score desc);

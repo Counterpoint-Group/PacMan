@@ -32,7 +32,7 @@ A complete Pac-Man arcade built for internal Counterpoint use: real HTML5 Canvas
 
 ## Overview
 
-Employees are **pre-loaded into a database table**. There is no sign-up, no login and no third-party auth of any kind. A player picks their name, confirms a short **Player Code**, chooses a difficulty and plays. When the game ends, the score is checked and saved on the server.
+Players can choose an existing seeded profile or use **NEW PLAYER — CREATE ACCOUNT** at the top of the player list. New players choose a unique username and a short **Player Code**, then enter the arcade immediately. When the game ends, the score is checked and saved to that player's profile on the server.
 
 ```mermaid
 flowchart LR
@@ -56,7 +56,7 @@ flowchart LR
 | 🧩 **10 designed mazes, then endless** | Ten hand-tuned levels, then the mazes rotate forever with difficulty scaling that is clamped so it never becomes impossible. |
 | 🔥 **Three difficulty modes** | EASY, OK OK and NIGHTMARE change lives, ghost behaviour and how much every point is worth. |
 | 🏆 **Company leaderboard** | Overall, per-difficulty and Highest Level views, your row highlighted, and a "YOUR RANK" line if you're outside the top 25. |
-| 🔐 **No accounts** | Pre-seeded employees, Player Code verification, signed httpOnly session cookie. Supabase is used only as a Postgres database. |
+| 🔐 **Lightweight player accounts** | Unique usernames, Player Code verification, seeded-player support and a signed httpOnly session cookie. Supabase is used only as a Postgres database. |
 | 🛡️ **Server-side score checks** | Scores come from game state, never a text box. The server validates every submission and ignores any player ID sent by the browser. |
 | 🔊 **Arcade sound and polish** | WebAudio tones (no audio files), an intro jingle, pause menu with confirmations, "NEW HIGH SCORE" celebration, a CRT scanline glow. |
 
@@ -112,6 +112,8 @@ Open the Supabase **SQL Editor** and run these in order:
 1. [`supabase/schema.sql`](supabase/schema.sql) creates `players` and `game_history`, adds indexes, and locks both tables down with Row Level Security.
 2. [`supabase/seed.sql`](supabase/seed.sql) (optional) adds three demo players so you can try the arcade straight away:
 
+> Updating an existing installation? Run `supabase/schema.sql` again so the case-insensitive unique-username index is added before enabling public account creation.
+
 | Player | Player Code | Department |
 | --- | :---: | --- |
 | Demo Player 1 | `1111` | Online Systems |
@@ -158,7 +160,7 @@ on conflict (employee_number) do nothing;
 | Column | Notes |
 | --- | --- |
 | `employee_number` | Unique. Use your real employee ID. |
-| `name` | Shown in the player list and leaderboard. |
+| `name` | Unique (case-insensitive). Shown in the player list and leaderboard. |
 | `player_code` | Short code the employee types to confirm it's them. |
 | `department` | Optional. Shown on the leaderboard and searchable in the player list. |
 
@@ -171,7 +173,7 @@ Score, level and stats columns are managed by the game. Don't set them by hand.
 
 ### How Player Codes work
 
-The Player Code is a **lightweight identity confirmation**. It stops a colleague from accidentally (or playfully) posting a score under your name. It is deliberately not a login system, and the UI calls it **PLAYER VERIFICATION**.
+The Player Code is a **lightweight identity confirmation**. It lets a returning player reopen the same profile and keeps scores attached to the right username. It is deliberately not a full authentication system, and the existing-player UI calls it **PLAYER VERIFICATION**.
 
 - **Checked on the server only**, in constant time (`timingSafeEqual` over SHA-256 digests). It is never sent to the browser: `/api/players` returns just `id`, `name` and `department`.
 - **Nothing is revealed on failure.** A wrong code, an unknown player and a malformed request all show the same message.

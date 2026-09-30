@@ -25,6 +25,20 @@ const toProfile = (r: PlayerRow): PlayerProfile => ({
   totalGames: r.total_games, bestDifficulty: r.best_difficulty, lastPlayed: r.last_played,
 });
 
+export class PlayerNameTakenError extends Error {}
+
+/** Create a workshop player. A database index enforces case-insensitive name uniqueness. */
+export async function createPlayer(name: string, playerCode: string, department: string | null): Promise<PlayerProfile> {
+  const { data, error } = await getSupabase().from("players").insert({
+    name,
+    player_code: playerCode,
+    department,
+  }).select(PROFILE_COLUMNS).single();
+  if (error?.code === "23505") throw new PlayerNameTakenError(name);
+  if (error) dbFail("createPlayer", error);
+  return toProfile(data as PlayerRow);
+}
+
 /** Safe list for the "WHO'S PLAYING?" selector. Never includes player_code. */
 export async function getPlayers(): Promise<PublicPlayer[]> {
   const { data, error } = await getSupabase().from("players").select("id,name,department").order("name", { ascending: true }).limit(5000);
