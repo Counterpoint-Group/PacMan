@@ -9,7 +9,7 @@ import type { CompleteGameResponse, PlayerProfile } from "@/lib/types";
 import GameCanvas from "./GameCanvas";
 import { HudBar, HudLeft, HudRight } from "./GameHUD";
 import GameOver, { SaveState } from "./GameOver";
-import PauseMenu, { Confirm } from "./PauseMenu";
+import PauseMenu, { Confirm, PauseSaveState } from "./PauseMenu";
 
 interface Props {
   player: PlayerProfile;
@@ -30,6 +30,8 @@ export default function PacmanGame({ player, difficulty, onExit, onLeaderboard, 
   const [result, setResult] = useState<GameResult | null>(null);
   const [showOver, setShowOver] = useState(false);
   const [save, setSave] = useState<SaveState>({ status: "saving" });
+  const [pauseSave, setPauseSave] = useState<PauseSaveState>({ status: "idle" });
+  const pauseSaveLockRef = useRef(false);
   const [showTouchControls, setShowTouchControls] = useState(false);
 
   const options = useMemo(() => ({
@@ -41,16 +43,21 @@ export default function PacmanGame({ player, difficulty, onExit, onLeaderboard, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [difficulty]);
 
+  const saveResult = useCallback(async (r: GameResult) => {
+    const res = await apiPost<CompleteGameResponse>("/api/game/complete", r);
+    onProfile(res.profile);
+    return res;
+  }, [onProfile]);
+
   const submit = useCallback(async (r: GameResult) => {
     setSave({ status: "saving" });
     try {
-      const res = await apiPost<CompleteGameResponse>("/api/game/complete", r);
-      onProfile(res.profile);
+      const res = await saveResult(r);
       setSave({ status: "saved", newHighScore: res.isNewHighScore });
     } catch (err) {
       setSave({ status: "error", message: err instanceof ApiError ? err.message : "Something went wrong." });
     }
-  }, [onProfile]);
+  }, [saveResult]);
 
   useEffect(() => {
     const coarse = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 900;
@@ -160,7 +167,30 @@ export default function PacmanGame({ player, difficulty, onExit, onLeaderboard, 
 
   const resume = () => engineRef.current?.resume();
   const doRestartLevel = () => { setConfirm(null); engineRef.current?.restartLevel(); };
-  const doRestartGame = () => { setConfirm(null); setHud(null); engineRef.current?.restartGame(); };
+  const saveThen = useCallback(async (action: "restart" | "quit") => {
+    const engine = engineRef.current;
+    if (!engine || pauseSaveLockRef.current) return;
+    pauseSaveLockRef.current = true;
+    setPauseSave({ status: "saving" });
+    try {
+      const saved = await saveResult(engine.result());
+      pauseSaveLockRef.current = false;
+      setPauseSave({ status: "idle" });
+      setConfirm(null);
+      if (action === "restart") {
+        engine.highScore = saved.profile.highScore;
+        setHud(null);
+        engine.restartGame();
+      } else {
+        onExit();
+      }
+    } catch (err) {
+      pauseSaveLockRef.current = false;
+      setPauseSave({ status: "error", message: err instanceof ApiError ? err.message : "Couldn't save your score. Please try again." });
+    }
+  }, [onExit, saveResult]);
+  const doRestartGame = () => { void saveThen("restart"); };
+  const doQuit = () => { void saveThen("quit"); };
 
   return (
     <div className="crt fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-[#02030a]">
@@ -170,7 +200,15 @@ export default function PacmanGame({ player, difficulty, onExit, onLeaderboard, 
         <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
           <GameCanvas options={options} onEngine={(e) => { engineRef.current = e; }} />
           {paused && !result && (
-            <PauseMenu confirm={confirm} onConfirm={setConfirm} onResume={resume} onRestartLevel={doRestartLevel} onRestartGame={doRestartGame} onQuit={onExit} />
+            <PauseMenu
+              confirm={confirm}
+              saveState={pauseSave}
+              onConfirm={(next) => { setConfirm(next); setPauseSave({ status: "idle" }); }}
+              onResume={resume}
+              onRestartLevel={doRestartLevel}
+              onRestartGame={doRestartGame}
+              onQuit={doQuit}
+            />
           )}
           {result && showOver && (
             <GameOver
