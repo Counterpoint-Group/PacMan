@@ -27,6 +27,7 @@ for (const key of Object.keys(DIFFICULTIES) as DifficultyKey[]) {
   let over = 0;
   const rng = seeded(7);
   const e = new PacmanEngine({ difficulty: key, playerName: "TEST", highScore: 0, rng, onGameOver: () => over++ });
+  e.godMode = false; // Keep exercising ordinary death/game-over behavior too.
   for (let i = 0; i < 60 * 240 && e.phase !== "gameOver"; i++) {
     if (i % 25 === 0) e.pressDir(DIR_PRIORITY[Math.floor(rng() * 4)]);
     e.update(1 / 60);
@@ -90,6 +91,19 @@ for (const key of Object.keys(DIFFICULTIES) as DifficultyKey[]) {
   e.pac.c = 13; e.pac.r = 11; e.pac.off = 0; e.pac.dx = 0; e.pac.dy = 0; (e as any).phase = "playing"; (e as any).checkCollisions();
   check(e.score - before === Math.round(200 * m), `${key}: first ghost should score ${200 * m}, got ${e.score - before}`);
   console.log(`score x${m} (${key}): pellet ${Math.round(10 * m)}, power ${Math.round(50 * m)}, ghost ${e.score - before}`);
+}
+
+// 3c. God Mode makes a normal chasing ghost edible without costing Pac-Man a life.
+{
+  const e = new PacmanEngine({ difficulty: "OK_OK", playerName: "GOD", highScore: 0, rng: seeded(11) });
+  const g = e.ghosts[0];
+  g.state = "CHASE"; g.c = 13; g.r = 11; g.off = 0; g.dx = -1; g.dy = 0; g.x = 13.5; g.y = 11.5;
+  e.pac.c = 13; e.pac.r = 11; e.pac.off = 0; e.pac.dx = 0; e.pac.dy = 0;
+  const lives = e.lives, score = e.score;
+  (e as any).phase = "playing"; (e as any).checkCollisions();
+  check(e.lives === lives, "God Mode collision should not cost a life");
+  check((g.state as string) === "EATEN" && e.ghostsEaten === 1, "God Mode should eat a chasing ghost");
+  check(e.score - score === 300, `God Mode first ghost should score 300 on OK OK, got ${e.score - score}`);
 }
 
 // 4. Endless scaling stays clamped and never goes negative.

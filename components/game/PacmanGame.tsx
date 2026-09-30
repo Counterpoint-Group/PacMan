@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play, Volume2, VolumeX } from "lucide-react";
 import { DOWN, LEFT, RIGHT, UP, type DifficultyKey, type Vec } from "@/game/constants";
-import type { GameResult, HudState, PacmanEngine } from "@/game/engine";
+import { GOD_MODE_ENABLED, type GameResult, type HudState, type PacmanEngine } from "@/game/engine";
 import { sound } from "@/game/sound";
 import { ApiError, apiPost } from "@/lib/api";
 import type { CompleteGameResponse, PlayerProfile } from "@/lib/types";
@@ -199,6 +199,11 @@ export default function PacmanGame({ player, difficulty, onExit, onLeaderboard, 
         {hud && <HudLeft hud={hud} />}
         <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
           <GameCanvas options={options} onEngine={(e) => { engineRef.current = e; }} />
+          {GOD_MODE_ENABLED && (
+            <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 border-2 border-[var(--pac)] bg-[#02030a]/90 px-3 py-2 font-arcade text-[9px] neon-yellow">
+              GOD MODE · E2E TEST
+            </div>
+          )}
           {paused && !result && (
             <PauseMenu
               confirm={confirm}

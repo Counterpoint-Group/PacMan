@@ -21,6 +21,9 @@ import { Layers, buildLayers, drawFrame } from "./renderer";
 
 export type Phase = "ready" | "playing" | "dying" | "levelComplete" | "gameOver";
 
+/** Local E2E testing switch. Set to false before using this code for a public leaderboard. */
+export const GOD_MODE_ENABLED = true;
+
 export interface HudState {
   playerName: string; score: number; highScore: number; level: number; lives: number;
   difficulty: DifficultyLabel; mazeName: string; fruit: FruitType;
@@ -81,7 +84,7 @@ export class PacmanEngine {
   freezeT = 0;
   gameOverT = 0;
   /** Test hook: when true Pac-Man cannot be caught. */
-  godMode = false;
+  godMode = GOD_MODE_ENABLED;
 
   // ---- private simulation state ---------------------------------------------------
   private readonly diffKey: DifficultyKey;
@@ -562,8 +565,11 @@ export class PacmanEngine {
       }
     }
     for (const g of this.ghosts) {
-      if (g.state === "FRIGHTENED" && touching(px, py, g.x, g.y)) {
-        const pts = this.addScore(ghostScore(this.chain++));
+      const activeGhost = g.state === "SCATTER" || g.state === "CHASE" || g.state === "FRIGHTENED";
+      if (activeGhost && (g.state === "FRIGHTENED" || this.godMode) && touching(px, py, g.x, g.y)) {
+        // In God Mode the normal 200/400/800/1600 sequence repeats for each group of four ghosts.
+        const chainIndex = this.godMode ? this.chain++ % 4 : this.chain++;
+        const pts = this.addScore(ghostScore(chainIndex));
         this.ghostsEaten++;
         g.state = "EATEN"; g.eatenPhase = "return";
         this.popups.push({ x: g.x, y: g.y, text: String(pts), t: 1.1 });
